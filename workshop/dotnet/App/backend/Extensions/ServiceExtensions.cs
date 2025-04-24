@@ -5,6 +5,7 @@ using Core.Utilities.Plugins;
 // Add import required for StockService
 using Core.Utilities.Services;
 using Microsoft.SemanticKernel;
+
 namespace Extensions;
 
 public static class ServiceExtensions

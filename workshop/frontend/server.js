@@ -12,7 +12,8 @@ app.use(express.json());
 // Serve static files from the React app
 app.use(express.static(path.join(__dirname, 'build')));
 
-const API_URL = process.env.API_URL;
+//const API_URL = process.env.API_URL;
+const API_URL = 'https://automatic-cod-gxrgj6qw69vfvpj4-5035.app.github.dev/chat';
 
 app.post('/api/chat', async (req, res) => {
   try {

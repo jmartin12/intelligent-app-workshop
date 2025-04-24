@@ -1,6 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <NoWarn>SKEXP0110;SKEXP0001;SKEXP0101</NoWarn>
+    <TargetFramework>net8.0</TargetFramework>
 	</PropertyGroup>
 
   <ItemGroup>

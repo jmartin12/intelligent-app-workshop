@@ -10,8 +10,9 @@ using Microsoft.SemanticKernel.ChatCompletion;
 // Temporarily added to enable Semantic Kernel tracing
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-
-// TODO: Step 1 -- Add imports for Agents and Azure.Identity
+using Azure.AI.Projects;
+using Azure.Identity;
+using Microsoft.SemanticKernel.Agents.AzureAI;
 
 
 // Initialize the kernel with chat completion
@@ -23,7 +24,47 @@ Kernel kernel = builder.Build();
 // Initialize Time plugin and registration in the kernel
 kernel.Plugins.AddFromObject(new TimeInformationPlugin());
 
-// TODO: Step 2 - Initialize connection to Grounding with Bing Search tool and agent
+var connectionString = AISettingsProvider.GetSettings().AIFoundryProject.ConnectionString;
+System.Console.WriteLine(  $"Connection string: {connectionString}");
+
+var bingConnectionId = AISettingsProvider.GetSettings().AIFoundryProject.GroundingWithBingConnectionId;
+System.Console.WriteLine(  $"Bing connection id: {bingConnectionId}");
+
+var projectClient = new AIProjectClient(connectionString, new DefaultAzureCredential());
+
+ConnectionResponse bingConnection = await projectClient.GetConnectionsClient().GetConnectionAsync(bingConnectionId);
+var connectionId = bingConnection.Id;
+
+ToolConnectionList connectionList = new ToolConnectionList
+{
+    ConnectionList = { new ToolConnection(connectionId) }
+};
+BingGroundingToolDefinition bingGroundingTool = new BingGroundingToolDefinition(connectionList);
+
+var clientProvider =  AzureAIClientProvider.FromConnectionString(connectionString, new AzureCliCredential());
+AgentsClient client = clientProvider.Client.GetAgentsClient();
+var definition = await client.CreateAgentAsync(
+    "gpt-4o",
+    instructions:
+            """
+            Your responsibility is to find the stock sentiment for a given Stock.
+
+            RULES:
+            - Report a stock sentiment scale from 1 to 10 where stock sentiment is 1 for sell and 10 for buy.
+            - Only use current data reputable sources such as Yahoo Finance, MarketWatch, Fidelity and similar.
+            - Provide the stock sentiment scale in your response and a recommendation to buy, hold or sell.
+            """,
+    tools:
+    [
+        bingGroundingTool
+    ]);
+var agent = new AzureAIAgent(definition, clientProvider)
+{
+    Kernel = kernel,
+};
+
+// Create a thread for the agent conversation.
+AgentThread thread = await client.CreateThreadAsync();
 
 // Initialize Stock Data Plugin and register it in the kernel
 HttpClient httpClient = new();
@@ -44,9 +85,8 @@ OpenAIPromptExecutionSettings promptExecutionSettings = new()
 // Initialize kernel arguments
 KernelArguments kernelArgs = new(promptExecutionSettings);
 
-// TODO: Step 3 - Uncomment out all code after "Execute program" comment
 // Execute program.
-/*
+
 const string terminationPhrase = "quit";
 string? userInput;
 do
@@ -61,10 +101,18 @@ do
         string fullMessage = "";
         chatHistory.AddUserMessage(userInput);
 
-        // TODO: Step 4 - Invoke the agent
+        ChatMessageContent message = new(AuthorRole.User, userInput);
+        await agent.AddChatMessageAsync(thread.Id, message);
+
+        await foreach (ChatMessageContent response in agent.InvokeAsync(thread.Id))
+        {
+            string contentExpression = string.IsNullOrWhiteSpace(response.Content) ? string.Empty : response.Content;
+            chatHistory.AddAssistantMessage(contentExpression);
+            Console.WriteLine($"{contentExpression}");
+        }
 
         Console.WriteLine();
     }
 }
 while (userInput != terminationPhrase);
-*/
+

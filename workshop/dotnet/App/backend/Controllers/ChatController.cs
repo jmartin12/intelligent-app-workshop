@@ -30,7 +30,7 @@ public class ChatController : ControllerBase {
     private readonly string _groundingWithBingConnectionId;
     private readonly string _deploymentName;
     private readonly string _managedIdentityClientId;
-    
+
     public ChatController(Kernel kernel)
     {
         _kernel = kernel;       
@@ -39,7 +39,7 @@ public class ChatController : ControllerBase {
         _groundingWithBingConnectionId = AISettingsProvider.GetSettings().AIFoundryProject.GroundingWithBingConnectionId;
         _deploymentName = AISettingsProvider.GetSettings().AIFoundryProject.DeploymentName;
         _managedIdentityClientId = AISettingsProvider.GetSettings().ManagedIdentity?.ClientId;
-        
+
         _agentsClient = GetAgentsClient().Result;
         _stockSentimentAgent = GetAzureAIAgent().Result;
     }
@@ -52,9 +52,9 @@ public class ChatController : ControllerBase {
     {
         var credential = GetDefaultAzureCredential();
         var projectClient = new AIProjectClient(_connectionString, credential);
-        
+
         var clientProvider =  AzureAIClientProvider.FromConnectionString(_connectionString, credential);
-                    
+
         ConnectionResponse bingConnection = await projectClient.GetConnectionsClient().GetConnectionAsync(_groundingWithBingConnectionId);
         var connectionId = bingConnection.Id;
 
@@ -85,7 +85,7 @@ public class ChatController : ControllerBase {
         {
             Kernel = _kernel,
         };
-        
+
         return agent;
     }
     /// <summary>
@@ -145,14 +145,14 @@ public class ChatController : ControllerBase {
                 {
                     if (item is AnnotationContent annotation)
                     {
-                        var annotationExpression = ($"{annotation.Quote}: File #{annotation.FileId}");
+                        var annotationExpression = ($" {annotation.Quote}: File #{annotation.FileId}");
                         chatHistory.AddAssistantMessage(annotationExpression);
                         fullMessage += annotationExpression;
                     }
                 }
             }
         }
-            
+
         var chatResponse = new ChatResponse(fullMessage, chatHistory.FromChatHistory());    
         return chatResponse;
     }

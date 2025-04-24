@@ -7,7 +7,7 @@ using Core.Utilities.Services;
 using Core.Utilities.Extensions;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
-// TODO: Step 1 - Add import for Agents
+using Microsoft.SemanticKernel.Agents;
 
 // Add ChatCompletion import
 using Microsoft.SemanticKernel.ChatCompletion;
@@ -30,7 +30,24 @@ HttpClient httpClient = new();
 StockDataPlugin stockDataPlugin = new(new StocksService(httpClient));
 kernel.Plugins.AddFromObject(stockDataPlugin);
 
-// TODO: Step 2 - Add code to create Stock Sentiment Agent
+ChatCompletionAgent stockSentimentAgent =
+    new()
+    {
+        Name = "StockSentimentAgent",
+        Instructions =
+            """
+            Your responsibility is to find the stock sentiment for a given Stock.
+
+            RULES:
+            - Use stock sentiment scale from 1 to 10 where stock sentiment is 1 for sell and 10 for buy.
+            - Provide the rating in your response and a recommendation to buy, hold or sell.
+            - Include the reasoning behind your recommendation.
+            - Include the source of the sentiment in your response.
+            """,
+        Kernel = kernel,
+        Arguments = new KernelArguments(new OpenAIPromptExecutionSettings() { 
+            FunctionChoiceBehavior = FunctionChoiceBehavior.Auto()})
+    };
 
 // Get chatCompletionService and initialize chatHistory with system prompt
 var chatCompletionService = kernel.GetRequiredService<IChatCompletionService>();
@@ -49,11 +66,11 @@ KernelArguments kernelArgs = new(promptExecutionSettings);
 // Add call to print all plugins and functions
 var functions = kernel.Plugins.GetFunctionsMetadata();
 // TODO: Step 0a - Comment line to print all plugins and functions
-Console.WriteLine(functions.ToPrintableString());
+//Console.WriteLine(functions.ToPrintableString());
 
 // TODO: Step 0b - Uncomment out all code after "Execute program" comment
 // Execute program.
-/*
+
 const string terminationPhrase = "quit";
 string? userInput;
 do
@@ -69,7 +86,7 @@ do
         chatHistory.AddUserMessage(userInput);
 
         // TODO: Step 3 - Replace chatCompletionService with stockSentimentAgent
-        await foreach (var chatUpdate in chatCompletionService.GetStreamingChatMessageContentsAsync(chatHistory, promptExecutionSettings, kernel))
+        await foreach (var chatUpdate in stockSentimentAgent.InvokeAsync(chatHistory, kernelArgs))
         {
             Console.Write(chatUpdate.Content);
             fullMessage += chatUpdate.Content ?? "";
@@ -80,4 +97,4 @@ do
     }
 }
 while (userInput != terminationPhrase);
-*/
+

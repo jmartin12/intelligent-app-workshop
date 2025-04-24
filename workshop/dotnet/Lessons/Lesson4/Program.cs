@@ -3,8 +3,7 @@ using Core.Utilities.Config;
 using Core.Utilities.Plugins;
 // Add import required for StockService
 using Core.Utilities.Services;
-// TODO: Step 1 - Add import for ModelExtensionMethods
-
+using Core.Utilities.Extensions;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
 // Add ChatCompletion import
@@ -42,33 +41,34 @@ OpenAIPromptExecutionSettings promptExecutionSettings = new()
 // Initialize kernel arguments
 KernelArguments kernelArgs = new(promptExecutionSettings);
 
-// TODO: Step 2 - add call to print all plugins and functions
+var functions = kernel.Plugins.GetFunctionsMetadata();
+Console.WriteLine(functions.ToPrintableString());
 
 // TODO: Step 3 - Comment out all code after "Execute program" comment
-// Execute program.
-const string terminationPhrase = "quit";
-string? userInput;
-do
-{
-    Console.Write("User > ");
-    userInput = Console.ReadLine();
+// // Execute program.
+// const string terminationPhrase = "quit";
+// string? userInput;
+// do
+// {
+//     Console.Write("User > ");
+//     userInput = Console.ReadLine();
 
-    if (userInput is not null and not terminationPhrase)
-    {
-        Console.Write("Assistant > ");
-        // Initialize fullMessage variable and add user input to chat history
-        string fullMessage = "";
-        chatHistory.AddUserMessage(userInput);
+//     if (userInput is not null and not terminationPhrase)
+//     {
+//         Console.Write("Assistant > ");
+//         // Initialize fullMessage variable and add user input to chat history
+//         string fullMessage = "";
+//         chatHistory.AddUserMessage(userInput);
 
-        // Provide promptExecutionSettings and kernel arguments
-        await foreach (var chatUpdate in chatCompletionService.GetStreamingChatMessageContentsAsync(chatHistory, promptExecutionSettings, kernel))
-        {
-            Console.Write(chatUpdate.Content);
-            fullMessage += chatUpdate.Content ?? "";
-        }
-        chatHistory.AddAssistantMessage(fullMessage);
+//         // Provide promptExecutionSettings and kernel arguments
+//         await foreach (var chatUpdate in chatCompletionService.GetStreamingChatMessageContentsAsync(chatHistory, promptExecutionSettings, kernel))
+//         {
+//             Console.Write(chatUpdate.Content);
+//             fullMessage += chatUpdate.Content ?? "";
+//         }
+//         chatHistory.AddAssistantMessage(fullMessage);
 
-        Console.WriteLine();
-    }
-}
-while (userInput != terminationPhrase);
+//         Console.WriteLine();
+//     }
+// }
+// while (userInput != terminationPhrase);
